@@ -1,15 +1,12 @@
+import pprint
+
 import requests
 import bs4
 import time
-import openpyxl
 
 # headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5)'}  # MAC
 # headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'} # CHROME
 headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0'}  # FIREFOX
-
-wb = openpyxl.Workbook()
-sheet = wb.get_active_sheet()
-sheet.title = 'Precos maltes LAMAS'
 
 
 def request_site(url, headers, num_pagina):
@@ -25,9 +22,10 @@ def scraping_insumos(requisicao, status, num_pagina, lista_insumos):
 
     while status == None:
         pagina = bs4.BeautifulSoup(requisicao.text)
-        insumo = pagina.select('div[class="list-conteiner-name"]')
-        precos = pagina.select('span[class="regular-price"]')
-        proximo = pagina.select('a[class="next i-next"]')
+        insumo = pagina.select('div h4')
+        # insumo = pagina.select('div[class="caption"]')
+        precos = pagina.select('p[class="price"]')
+        proximo = pagina.select('ul[class="pagination"]')
 
         if len(precos) > 0:
             for i in range(len(precos)):
@@ -39,7 +37,7 @@ def scraping_insumos(requisicao, status, num_pagina, lista_insumos):
 
             if len(proximo) > 0:
                 num_pagina += 1
-                url = 'http://loja.lamasbrewshop.com.br/insumos/malte-cereais.html?' + 'p=%d' % num_pagina
+                url = 'https://brewheadshop.com.br/insumos/maltes?' + 'page=%d' % num_pagina
                 requisicao, status = request_site(url, headers, num_pagina)
                 # res = requests.get(url, headers=headers)
                 # status_request = res.raise_for_status()
@@ -51,7 +49,7 @@ def scraping_insumos(requisicao, status, num_pagina, lista_insumos):
     return lista_insumos
 
 num_pagina = 1
-url = 'http://loja.lamasbrewshop.com.br/insumos/malte-cereais.html?' + 'p=%d' % num_pagina  # maltes
+url = 'https://brewheadshop.com.br/insumos/maltes?' + 'page=%d' % num_pagina  # maltes
 
 
 lista_insumos = []
@@ -60,12 +58,9 @@ requisicao, status = request_site(url, headers, num_pagina)
 lista_precos_insumos = scraping_insumos(requisicao, status, num_pagina, lista_insumos)
 
 # for i in range(len(lista_precos_insumos)):
-#     print(lista_precos_insumos[i])
-
-
-for numeroLinha in range(2, len(lista_insumos)):
-    nome_valor = str(lista_insumos[numeroLinha]).split(":")
-    sheet.cell(row=numeroLinha, column=1).value = nome_valor[0]
-    sheet.cell(row=numeroLinha, column=2).value = nome_valor[1]
-
-wb.save('maltes_LAMAS.xlsx')
+print('Gravando os resultados...')
+resultFile = open('insumos.txt', 'w')
+resultFile.write('maltes = ' + pprint.pformat(lista_insumos))
+resultFile.close()
+print('Terminado.')
+    # print(lista_precos_insumos[i])
